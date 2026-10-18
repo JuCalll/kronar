@@ -43,3 +43,11 @@ validateBoard b
                                   ++ " squares, but it has " ++ show (length b) ++ ".")
   | all (== 0) b          = Left "The board must have at least one square with a value other than 0."
   | otherwise             = Right b
+
+-- Void Rule
+
+findGoal :: Board -> Int
+findGoal b = last [i | i <- [0 .. length b - 1], b !! i /= 0]
+
+voidRuleApplied :: Board -> Int -> Bool
+voidRuleApplied b g = g /= length b - 1
