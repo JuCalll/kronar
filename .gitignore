@@ -1,0 +1,13 @@
+# Haskell build files
+*.hi
+*.o
+dist-newstyle/
+
+# Elm build files
+elm-stuff/
+elm/index.html
+
+# Editors
+.idea/
+*.iml
+.vscode/
