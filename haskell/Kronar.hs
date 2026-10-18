@@ -51,3 +51,13 @@ findGoal b = last [i | i <- [0 .. length b - 1], b !! i /= 0]
 
 voidRuleApplied :: Board -> Int -> Bool
 voidRuleApplied b g = g /= length b - 1
+
+-- Path generation
+
+allPaths :: Int -> Int -> [Path]
+allPaths current target
+  | current == target = [[target]]
+  | otherwise         = [ current : rest
+                        | next <- [current + 1 .. min target (current + 3)]
+                        , rest <- allPaths next target ]
+
