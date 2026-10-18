@@ -1,0 +1,11 @@
+{
+  "tablero": [3,-2,-1,4,2],
+  "casilla_meta": 4,
+  "regla_vacio_aplicada": false,
+  "camino_optimo": [0,2,3,4],
+  "puntaje_bruto": 8,
+  "penalizacion_zafiro": 0,
+  "bono_eter": 10,
+  "puntaje_final": 18,
+  "caminos_evaluados": 7
+}
