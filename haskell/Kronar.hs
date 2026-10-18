@@ -1,5 +1,5 @@
 module Kronar where
-
+import Data.List (intercalate)
 -- Input
 
 inputBoard :: Board
@@ -93,3 +93,93 @@ scorePath b p = PathScore
     raw    = rawScoreOf values
     pen    = sapphirePenalty values
     bon    = etherBonus raw
+
+-- Optimal path and tie-breakers
+
+rankKey :: PathScore -> (Int, Int, Path)
+rankKey s = (negate (finalScore s), length (scoredPath s), scoredPath s)
+
+bestPath :: [PathScore] -> PathScore
+bestPath scores = foldr1 better scores
+  where
+    better x y
+      | rankKey x <= rankKey y = x
+      | otherwise              = y
+
+solve :: Board -> GameResult
+solve b = GameResult
+  { board          = b
+  , goal           = g
+  , voidApplied    = voidRuleApplied b g
+  , best           = bestPath scores
+  , evaluatedPaths = length scores
+  }
+  where
+    g      = findGoal b
+    scores = map (scorePath b) (allPaths 0 g)
+
+-- JSON
+
+jsonBool :: Bool -> String
+jsonBool True  = "true"
+jsonBool False = "false"
+
+jsonIntList :: [Int] -> String
+jsonIntList xs = show xs
+
+jsonField :: String -> String -> String
+jsonField key value = "  \"" ++ key ++ "\": " ++ value
+
+toJson :: GameResult -> String
+toJson r = "{\n" ++ intercalate ",\n" fields ++ "\n}\n"
+  where
+    s = best r
+    fields =
+      [ jsonField "tablero"              (jsonIntList (board r))
+      , jsonField "casilla_meta"         (show (goal r))
+      , jsonField "regla_vacio_aplicada" (jsonBool (voidApplied r))
+      , jsonField "camino_optimo"        (jsonIntList (scoredPath s))
+      , jsonField "puntaje_bruto"        (show (rawScore s))
+      , jsonField "penalizacion_zafiro"  (show (penalty s))
+      , jsonField "bono_eter"            (show (bonus s))
+      , jsonField "puntaje_final"        (show (finalScore s))
+      , jsonField "caminos_evaluados"    (show (evaluatedPaths r))
+      ]
+
+-- Console summary
+
+toSquareNumbers :: Path -> [Int]
+toSquareNumbers p = map (+ 1) p
+
+summary :: GameResult -> String
+summary r = unlines
+  [ "=== The Game of the Kronars ==="
+  , "Board:           " ++ show (board r)
+  , "Goal:            square " ++ show (goal r + 1) ++ voidNote
+  , "Optimal path:    squares " ++ show (toSquareNumbers (scoredPath s))
+  , "Raw score:       " ++ show (rawScore s)
+  , "Sapphire Rule:   -" ++ show (penalty s)
+  , "Ether Rule:      +" ++ show (bonus s)
+  , "Final score:     " ++ show (finalScore s)
+  , "Paths evaluated: " ++ show (evaluatedPaths r)
+  ]
+  where
+    s = best r
+    voidNote
+      | voidApplied r = " (Void Rule applied)"
+      | otherwise     = ""
+
+-- Main
+
+outputFile :: FilePath
+outputFile = "resultado.json"
+
+main :: IO ()
+main =
+  case validateBoard inputBoard of
+    Left err -> putStrLn ("Invalid board: " ++ err ++ "\nNo file was created.")
+    Right b  -> do
+      let result = solve b
+      putStr (summary result)
+      writeFile outputFile (toJson result)
+      putStrLn ("File " ++ outputFile ++ " created.")
